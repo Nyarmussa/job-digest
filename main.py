@@ -188,13 +188,14 @@ def _jsearch_via_openwebninja(key):
 
 
 def _jsearch_via_rapidapi(key):
-    url = "https://jsearch.p.rapidapi.com/search"
+    # Same OpenWeb Ninja engine behind RapidAPI now uses /search-v2 (the old /search 404s).
+    url = "https://jsearch.p.rapidapi.com/search-v2"
     headers = {"X-RapidAPI-Key": key, "X-RapidAPI-Host": "jsearch.p.rapidapi.com"}
     out = []
     for title in TARGET_TITLES:
-        params = {"query": title, "country": "us", "page": "1",
-                  "num_pages": str(JSEARCH_PAGES), "date_posted": "month",
-                  "employment_types": "FULLTIME", "remote_jobs_only": "true"}
+        params = {"query": title, "country": "us", "date_posted": "month",
+                  "employment_types": "FULLTIME", "work_from_home": "true",
+                  "num_pages": str(JSEARCH_PAGES)}
         jobs = _jsearch_request(url, headers, params, "RapidAPI", title)
         if jobs is None:
             continue
