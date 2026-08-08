@@ -499,8 +499,12 @@ render();
 
 # ---------------------------------------------------------------------------
 def gather_and_score(cap):
-    have_js = bool(os.environ.get("OPENWEBNINJA_API_KEY") or os.environ.get("RAPIDAPI_KEY"))
-    have_az = bool(os.environ.get("ADZUNA_APP_ID") and os.environ.get("ADZUNA_APP_KEY"))
+    have_js = bool(os.environ.get("OPENWEBNINJA_API_KEY", "").strip()
+                   or os.environ.get("RAPIDAPI_KEY", "").strip())
+    have_az = bool(os.environ.get("ADZUNA_APP_ID", "").strip()
+                   and os.environ.get("ADZUNA_APP_KEY", "").strip())
+    log(f"Sources configured: JSearch={'yes' if have_js else 'no'}, "
+        f"Adzuna={'yes' if have_az else 'no'}")
     if not (have_js or have_az):
         log("ERROR: no job source. Set OPENWEBNINJA_API_KEY (or RAPIDAPI_KEY) and/or ADZUNA_APP_ID + ADZUNA_APP_KEY.")
         sys.exit(1)
