@@ -1,9 +1,9 @@
-name: Daily Job Dashboard
+name: Job Dashboard (Mon/Wed/Fri)
 
 on:
   schedule:
-    # 12:00 UTC daily (~06:00 Mountain). Builds docs/ and publishes to GitHub Pages.
-    - cron: "0 12 * * *"
+    # 12:00 UTC on Mon, Wed, Fri (~06:00 Mountain). Builds docs/ and publishes to GitHub Pages.
+    - cron: "0 12 * * 1,3,5"
   workflow_dispatch:
 
 permissions:
