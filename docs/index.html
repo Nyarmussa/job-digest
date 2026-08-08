@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ryan's Daily Job Matches</title>
+<style>
+  body{font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:820px;margin:0 auto;
+       padding:24px 16px;color:#111;background:#fafafa}
+  h1{color:#1f3864;margin-bottom:2px} .sub{color:#666;font-size:13px;margin-bottom:18px}
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;margin:14px 0;
+        box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .title{font-size:17px;font-weight:700;color:#1f3864} .score{float:right;color:#059669}
+  .meta{color:#555;font-size:13px;margin:5px 0} .why{font-size:14px;margin-top:6px}
+  .sig{color:#666;font-size:12px;margin-top:5px} .caveat{color:#b45309;font-size:13px;margin-top:5px}
+  a.apply{color:#1f3864;font-weight:600;text-decoration:none}
+  .vote{margin-top:10px} .vote button{font-size:18px;border:1px solid #ddd;background:#fff;border-radius:8px;
+        padding:4px 12px;margin-right:8px;cursor:pointer} .voted{opacity:.5}
+  .foot{color:#888;font-size:12px;margin-top:22px;border-top:1px solid #eee;padding-top:12px}
+</style></head><body>
+<h1>Daily job matches</h1>
+<div class="sub">Updated 2026-08-08 20:12 UTC • best first • 👍/👎 teaches the ranking what you like</div>
+<div id="list"></div>
+<div class="foot">Screened on: Full-time salaried only (no hourly/contract/temp) • salary ≥ $110,000 (or undisclosed, flagged) • ~200+ employees (estimate) • remote or Montana • posted within 14 days • fit ≥ 3.5/5.0. Size / AI / growth are best-effort estimates — verify before applying.</div>
+<script>
+const JOBS = [];
+const FEEDBACK_URL = "https://script.google.com/macros/s/AKfycbx5b7Ddc3rfI_qW7g2Axo3GeC-iEofBg8GaQ3lQM1PBSA-pgkJcXtL-K_Ngm70_C5O6/exec";
+const voted = JSON.parse(localStorage.getItem('voted')||'{}');
+function money(v){return (typeof v==='number'&&v)?'$'+v.toLocaleString():null;}
+function salary(r){let lo=money(r.salary_min),hi=money(r.salary_max);
+  let s=lo&&hi?lo+'–'+hi:(lo?lo+'+':null); return (r.salary_disclosed!==false&&s)?s:'salary not disclosed';}
+function vote(id,r,v){
+  voted[id]=v; localStorage.setItem('voted',JSON.stringify(voted));
+  render();
+  if(FEEDBACK_URL){ try{ fetch(FEEDBACK_URL,{method:'POST',mode:'no-cors',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({vote:v,title:r.title,company:r.company,url:r.url})}); }catch(e){} }
+}
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function render(){
+  if(!JOBS.length){document.getElementById('list').innerHTML=
+    '<div class="card">No roles cleared the bar today. Check back tomorrow.</div>';return;}
+  document.getElementById('list').innerHTML = JOBS.map((r,i)=>{
+    const id=(r.url||r.title+ '|' +r.company);
+    const v=voted[id];
+    const caveat=r.caveat?'<div class="caveat">⚠ '+esc(r.caveat)+'</div>':'';
+    const src=r.source?' • via '+esc(r.source):'';
+    return `<div class="card">
+      <div class="title">${esc(r.title)} — ${esc(r.company)}<span class="score">${r.score}/5.0</span></div>
+      <div class="meta">${esc(r.location)} • ${esc(salary(r))} • posted ${esc(r.created)}${src}</div>
+      <div class="why">${esc(r.why)}</div>
+      <div class="sig">Size: ${esc(String(r.size_estimate))} | AI: ${esc(String(r.ai_posture))} | Growth: ${esc(String(r.growth_signal))}</div>
+      ${caveat}
+      <div class="vote">
+        <button class="${v==='up'?'voted':''}" onclick='vote(${JSON.stringify(id)}, ${JSON.stringify(r)}, "up")'>👍</button>
+        <button class="${v==='down'?'voted':''}" onclick='vote(${JSON.stringify(id)}, ${JSON.stringify(r)}, "down")'>👎</button>
+        <a class="apply" href="${esc(r.url)}" target="_blank" rel="noopener">View posting →</a>
+      </div></div>`;
+  }).join('');
+}
+render();
+</script></body></html>
