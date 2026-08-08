@@ -300,17 +300,38 @@ def prefilter(jobs):
 # ---------------------------------------------------------------------------
 # Score
 # ---------------------------------------------------------------------------
-def score_with_claude(jobs, api_key, fb, cap):
-    if not jobs:
-        return []
-    client = anthropic.Anthropic(api_key=api_key)
+SCORE_BATCH = 10   # jobs per Claude call; keeps the JSON response under the token limit
+
+
+def _parse_json_array(text):
+    """Parse a JSON array, salvaging complete objects if the tail was truncated."""
+    text = text.strip()
+    if text.startswith("```"):
+        text = text.split("```", 2)[1]
+        if text.startswith("json"):
+            text = text[4:]
+    text = text.strip()
+    try:
+        return json.loads(text)
+    except Exception:
+        # salvage: keep up to the last complete "}" and close the array
+        cut = text.rfind("}")
+        if cut != -1:
+            try:
+                return json.loads(text[:cut + 1] + "]")
+            except Exception:
+                return None
+        return None
+
+
+def _score_batch(client, batch, fb):
     compact = [{
         "i": i, "title": j.get("title", ""),
         "company": (j.get("company") or {}).get("display_name", "Unknown"),
         "location": (j.get("location") or {}).get("display_name", ""),
         "salary_min": j.get("salary_min"), "salary_max": j.get("salary_max"),
-        "created": j.get("created", ""), "description": (j.get("description") or "")[:1200],
-    } for i, j in enumerate(jobs)]
+        "created": j.get("created") or "", "description": (j.get("description") or "")[:900],
+    } for i, j in enumerate(batch)]
 
     prompt = f"""You are screening job postings for a candidate. Candidate profile:
 
@@ -329,44 +350,55 @@ Scoring rules:
 Postings as JSON:
 {json.dumps(compact)}
 
-Return ONLY a JSON array (no prose). One object per posting with keys:
-  "i", "score" (1.0-5.0), "size_estimate", "likely_startup" (bool), "ai_posture",
-  "growth_signal", "why" (one sentence), "caveat" (short or ""), "salary_disclosed" (bool)
+Return ONLY a compact JSON array (no prose, no markdown). One object per posting with keys:
+  "i", "score" (1.0-5.0), "size_estimate" (short string), "likely_startup" (bool),
+  "ai_posture" (<=6 words), "growth_signal" (<=6 words), "why" (<=15 words),
+  "caveat" (<=10 words or ""), "salary_disclosed" (bool)
 """
     msg = client.messages.create(model=CLAUDE_MODEL, max_tokens=4000,
                                  messages=[{"role": "user", "content": prompt}])
-    text = "".join(b.text for b in msg.content if getattr(b, "type", "") == "text").strip()
-    if text.startswith("```"):
-        text = text.split("```", 2)[1]
-        if text.startswith("json"):
-            text = text[4:]
-    try:
-        scores = json.loads(text)
-    except Exception as e:
-        log(f"Could not parse Claude JSON: {e}\nRaw: {text[:400]}")
+    text = "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
+    scores = _parse_json_array(text)
+    if scores is None:
+        log(f"Could not parse a scoring batch (skipped); raw start: {text[:200]}")
         return []
 
-    results = []
+    out = []
     for s in scores:
         idx = s.get("i")
-        if idx is None or idx < 0 or idx >= len(jobs):
+        if idx is None or idx < 0 or idx >= len(batch):
             continue
-        job = jobs[idx]
+        job = batch[idx]
         if s.get("likely_startup") and "likely <200" in str(s.get("size_estimate", "")).lower():
             continue
-        if float(s.get("score", 0)) < MIN_SCORE:
+        try:
+            score = float(s.get("score", 0))
+        except Exception:
             continue
-        results.append({
+        if score < MIN_SCORE:
+            continue
+        out.append({
             "title": job.get("title", ""),
             "company": (job.get("company") or {}).get("display_name", "Unknown"),
             "location": (job.get("location") or {}).get("display_name", ""),
             "salary_min": job.get("salary_min"), "salary_max": job.get("salary_max"),
             "created": (job.get("created") or "")[:10], "url": job.get("redirect_url", ""),
-            "source": job.get("source", ""), "score": round(float(s.get("score", 0)), 1),
+            "source": job.get("source", ""), "score": round(score, 1),
             "size_estimate": s.get("size_estimate", "unknown"), "ai_posture": s.get("ai_posture", ""),
             "growth_signal": s.get("growth_signal", ""), "why": s.get("why", ""),
             "caveat": s.get("caveat", ""), "salary_disclosed": s.get("salary_disclosed", True),
         })
+    return out
+
+
+def score_with_claude(jobs, api_key, fb, cap):
+    if not jobs:
+        return []
+    client = anthropic.Anthropic(api_key=api_key)
+    results = []
+    for start in range(0, len(jobs), SCORE_BATCH):
+        results += _score_batch(client, jobs[start:start + SCORE_BATCH], fb)
+    log(f"Scored {len(jobs)} candidates -> {len(results)} cleared the bar")
     results.sort(key=lambda x: x["score"], reverse=True)
     return results[:cap]
 
