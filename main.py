@@ -129,84 +129,93 @@ def _annualize(amount, period):
         return None
 
 
-def fetch_jsearch():
-    """Supports JSearch via OpenWeb Ninja's own API (OPENWEBNINJA_API_KEY) or the
-    RapidAPI-hosted gateway (RAPIDAPI_KEY). Whichever key is set is used."""
-    own = os.environ.get("OPENWEBNINJA_API_KEY", "").strip()
-    rapid = os.environ.get("RAPIDAPI_KEY", "").strip()
-    if own:
-        url = "https://api.openwebninja.com/jsearch/search-v2"
-        headers = {"x-api-key": own}
-        provider = "OpenWebNinja"
-    elif rapid:
-        url = "https://jsearch.p.rapidapi.com/search"
-        headers = {"X-RapidAPI-Key": rapid, "X-RapidAPI-Host": "jsearch.p.rapidapi.com"}
-        provider = "RapidAPI"
-    else:
-        return []
+def _jsearch_request(url, headers, params, provider, title):
+    """One GET with retry on 5xx/429. Returns parsed jobs list, or None on failure."""
+    for attempt in (1, 2, 3):
+        try:
+            r = requests.get(url, headers=headers, params=params, timeout=30)
+            if r.status_code == 200:
+                payload = r.json().get("data", [])
+                # search-v2 returns {"jobs": [...], "cursor": ...}; older shape is a bare list
+                return payload.get("jobs", []) if isinstance(payload, dict) else payload
+            body = (r.text or "").strip().replace("\n", " ")[:300]
+            log(f"JSearch ({provider}) '{title}' HTTP {r.status_code}: {body}")
+            if r.status_code in (429, 500, 502, 503, 504) and attempt < 3:
+                time.sleep(3 * attempt)
+                continue
+            return None
+        except Exception as e:
+            log(f"JSearch ({provider}) fetch error for '{title}': {e}")
+            return None
+    return None
+
+
+def _normalize_jsearch(j):
+    loc_bits = [j.get("job_city"), j.get("job_state"), j.get("job_country")]
+    remote = bool(j.get("job_is_remote")) or (j.get("work_arrangement") == "remote")
+    loc = ", ".join([b for b in loc_bits if b]) or ("Remote" if remote else "")
+    return {
+        "id": f"js:{j.get('job_id')}",
+        "title": j.get("job_title", ""),
+        "company": {"display_name": j.get("employer_name") or "Unknown"},
+        "location": {"display_name": loc},
+        "salary_min": _annualize(j.get("job_min_salary"), j.get("job_salary_period")),
+        "salary_max": _annualize(j.get("job_max_salary"), j.get("job_salary_period")),
+        "created": j.get("job_posted_at_datetime_utc", ""),
+        "redirect_url": j.get("job_apply_link", ""),
+        "description": j.get("job_description", "") or "",
+        "job_is_remote": remote,
+        "employment_type": (j.get("job_employment_type") or "").upper(),
+        "pay_period": (j.get("job_salary_period") or "").upper(),
+        "source": "JSearch",
+    }
+
+
+def _jsearch_via_openwebninja(key):
+    url = "https://api.openwebninja.com/jsearch/search-v2"
+    headers = {"x-api-key": key}
     out = []
     for title in TARGET_TITLES:
-        if provider == "OpenWebNinja":
-            params = {
-                "query": title,
-                "country": "us",
-                "date_posted": "month",
-                "employment_types": "FULLTIME",
-                "work_from_home": "true",   # remote roles; Montana comes from Adzuna
-                "num_pages": str(JSEARCH_PAGES),
-            }
-        else:  # RapidAPI JSearch (v5, GET /search)
-            params = {
-                "query": title,
-                "country": "us",
-                "page": "1",
-                "num_pages": str(JSEARCH_PAGES),
-                "date_posted": "month",
-                "employment_types": "FULLTIME",
-                "remote_jobs_only": "true",   # RapidAPI's dedicated remote filter
-            }
-        data = None
-        for attempt in (1, 2, 3):
-            try:
-                r = requests.get(url, headers=headers, params=params, timeout=30)
-                if r.status_code == 200:
-                    data = r.json()
-                    break
-                body = (r.text or "").strip().replace("\n", " ")[:400]
-                log(f"JSearch ({provider}) '{title}' HTTP {r.status_code}: {body}")
-                if r.status_code in (429, 500, 502, 503, 504) and attempt < 3:
-                    time.sleep(3 * attempt)
-                    continue
-                break
-            except Exception as e:
-                log(f"JSearch ({provider}) fetch error for '{title}': {e}")
-                break
-        if data is None:
+        params = {"query": title, "country": "us", "date_posted": "month",
+                  "employment_types": "FULLTIME", "work_from_home": "true",
+                  "num_pages": str(JSEARCH_PAGES)}
+        jobs = _jsearch_request(url, headers, params, "OpenWebNinja", title)
+        if jobs is None:
             continue
-        payload = data.get("data", [])
-        # search-v2 returns {"jobs": [...], "cursor": ...}; older shape was a bare list
-        jobs_list = payload.get("jobs", []) if isinstance(payload, dict) else payload
-        for j in jobs_list:
-            loc_bits = [j.get("job_city"), j.get("job_state"), j.get("job_country")]
-            remote = bool(j.get("job_is_remote")) or (j.get("work_arrangement") == "remote")
-            loc = ", ".join([b for b in loc_bits if b]) or ("Remote" if remote else "")
-            out.append({
-                "id": f"js:{j.get('job_id')}",
-                "title": j.get("job_title", ""),
-                "company": {"display_name": j.get("employer_name") or "Unknown"},
-                "location": {"display_name": loc},
-                "salary_min": _annualize(j.get("job_min_salary"), j.get("job_salary_period")),
-                "salary_max": _annualize(j.get("job_max_salary"), j.get("job_salary_period")),
-                "created": j.get("job_posted_at_datetime_utc", ""),
-                "redirect_url": j.get("job_apply_link", ""),
-                "description": j.get("job_description", "") or "",
-                "job_is_remote": remote,
-                "employment_type": (j.get("job_employment_type") or "").upper(),
-                "pay_period": (j.get("job_salary_period") or "").upper(),
-                "source": "JSearch",
-            })
-        log(f"JSearch ({provider}) '{title}': {len(jobs_list)} results")
+        out += [_normalize_jsearch(j) for j in jobs]
+        log(f"JSearch (OpenWebNinja) '{title}': {len(jobs)} results")
     return out
+
+
+def _jsearch_via_rapidapi(key):
+    url = "https://jsearch.p.rapidapi.com/search"
+    headers = {"X-RapidAPI-Key": key, "X-RapidAPI-Host": "jsearch.p.rapidapi.com"}
+    out = []
+    for title in TARGET_TITLES:
+        params = {"query": title, "country": "us", "page": "1",
+                  "num_pages": str(JSEARCH_PAGES), "date_posted": "month",
+                  "employment_types": "FULLTIME", "remote_jobs_only": "true"}
+        jobs = _jsearch_request(url, headers, params, "RapidAPI", title)
+        if jobs is None:
+            continue
+        out += [_normalize_jsearch(j) for j in jobs]
+        log(f"JSearch (RapidAPI) '{title}': {len(jobs)} results")
+    return out
+
+
+def fetch_jsearch():
+    """Try OpenWeb Ninja first; if it returns nothing (e.g. a 503 outage) and a
+    RapidAPI key is set, automatically fail over to RapidAPI JSearch."""
+    own = os.environ.get("OPENWEBNINJA_API_KEY", "").strip()
+    rapid = os.environ.get("RAPIDAPI_KEY", "").strip()
+    results = []
+    if own:
+        results = _jsearch_via_openwebninja(own)
+    if not results and rapid:
+        if own:
+            log("JSearch: OpenWeb Ninja returned nothing — failing over to RapidAPI.")
+        results = _jsearch_via_rapidapi(rapid)
+    return results
 
 
 def fetch_adzuna(app_id, app_key):
