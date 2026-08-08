@@ -1,4 +1,56 @@
 {
-  "updated": "2026-08-08 23:34 UTC",
-  "jobs": []
+  "updated": "2026-08-08 23:41 UTC",
+  "jobs": [
+    {
+      "title": "Principal Business Intelligence Analyst - Ambulatory Operations",
+      "company": "Dana-Farber Cancer Institute",
+      "location": "Remote",
+      "salary_min": 110000,
+      "salary_max": 123000,
+      "created": "2026-08-06",
+      "url": "https://careers.dana-farber.org/job/1855/principal-business-intelligence-analyst-ambulatory-operations-operations-us-ma-boston-450-brookline-ave/",
+      "source": "JSearch",
+      "score": 4.2,
+      "size_estimate": "500+ employees",
+      "ai_posture": "Enterprise analytics framework",
+      "growth_signal": "Major healthcare org; exec-level BI",
+      "why": "End-to-end BI delivery; exec reporting; healthcare analytics strength.",
+      "caveat": "Salary low ($110-123k); no tech stack specified",
+      "salary_disclosed": true
+    },
+    {
+      "title": "Data & Reporting Analyst (Remote)",
+      "company": "Prime Therapeutics",
+      "location": "Remote",
+      "salary_min": null,
+      "salary_max": null,
+      "created": "2026-08-06",
+      "url": "https://www.nexxt.com/jobs/data-reporting-analyst-remote-springfield-il-3343348936-job.html",
+      "source": "JSearch",
+      "score": 3.8,
+      "size_estimate": "500+ employees",
+      "ai_posture": "Purpose-driven analytics",
+      "growth_signal": "Pharmacy innovation; PBM sector growth",
+      "why": "Data + reporting analyst role. Executive decision support focus.",
+      "caveat": "Salary not disclosed; pharmacy domain niche",
+      "salary_disclosed": false
+    },
+    {
+      "title": "Business Intelligence Analyst - (Remote, based in the U.S.)",
+      "company": "remote zest jobs",
+      "location": "Remote",
+      "salary_min": null,
+      "salary_max": null,
+      "created": "2026-08-06",
+      "url": "https://remotezest.up.railway.app/job/business-intelligence-analyst-remote-based-in-the-us",
+      "source": "JSearch",
+      "score": 3.5,
+      "size_estimate": "Unknown",
+      "ai_posture": "Not mentioned",
+      "growth_signal": "Not clear",
+      "why": "SQL + Power BI match. Data modeling + dashboards align.",
+      "caveat": "Posting quality poor; salary unknown; company unclear",
+      "salary_disclosed": false
+    }
+  ]
 }
