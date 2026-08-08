@@ -22,6 +22,7 @@ import os
 import sys
 import json
 import html
+import time
 import smtplib
 import datetime as dt
 from email.mime.multipart import MIMEMultipart
@@ -134,7 +135,7 @@ def fetch_jsearch():
     own = os.environ.get("OPENWEBNINJA_API_KEY", "").strip()
     rapid = os.environ.get("RAPIDAPI_KEY", "").strip()
     if own:
-        url = "https://api.openwebninja.com/jsearch/search"
+        url = "https://api.openwebninja.com/jsearch/search-v2"
         headers = {"x-api-key": own}
         provider = "OpenWebNinja"
     elif rapid:
@@ -145,24 +146,49 @@ def fetch_jsearch():
         return []
     out = []
     for title in TARGET_TITLES:
-        params = {
-            "query": title,
-            "country": "us",
-            "page": "1",
-            "num_pages": str(JSEARCH_PAGES),
-            "date_posted": "month",
-            "employment_types": "FULLTIME",
-        }
-        try:
-            r = requests.get(url, headers=headers, params=params, timeout=30)
-            r.raise_for_status()
-            data = r.json()
-        except Exception as e:
-            log(f"JSearch ({provider}) fetch failed for '{title}': {e}")
+        if provider == "OpenWebNinja":
+            params = {
+                "query": title,
+                "country": "us",
+                "date_posted": "month",
+                "employment_types": "FULLTIME",
+                "work_from_home": "true",   # remote roles; Montana comes from Adzuna
+                "num_pages": str(JSEARCH_PAGES),
+            }
+        else:  # RapidAPI JSearch
+            params = {
+                "query": f"{title} remote",
+                "country": "us",
+                "page": "1",
+                "num_pages": str(JSEARCH_PAGES),
+                "date_posted": "month",
+                "employment_types": "FULLTIME",
+            }
+        data = None
+        for attempt in (1, 2, 3):
+            try:
+                r = requests.get(url, headers=headers, params=params, timeout=30)
+                if r.status_code == 200:
+                    data = r.json()
+                    break
+                body = (r.text or "").strip().replace("\n", " ")[:400]
+                log(f"JSearch ({provider}) '{title}' HTTP {r.status_code}: {body}")
+                if r.status_code in (429, 500, 502, 503, 504) and attempt < 3:
+                    time.sleep(3 * attempt)
+                    continue
+                break
+            except Exception as e:
+                log(f"JSearch ({provider}) fetch error for '{title}': {e}")
+                break
+        if data is None:
             continue
-        for j in data.get("data", []):
+        payload = data.get("data", [])
+        # search-v2 returns {"jobs": [...], "cursor": ...}; older shape was a bare list
+        jobs_list = payload.get("jobs", []) if isinstance(payload, dict) else payload
+        for j in jobs_list:
             loc_bits = [j.get("job_city"), j.get("job_state"), j.get("job_country")]
-            loc = ", ".join([b for b in loc_bits if b]) or ("Remote" if j.get("job_is_remote") else "")
+            remote = bool(j.get("job_is_remote")) or (j.get("work_arrangement") == "remote")
+            loc = ", ".join([b for b in loc_bits if b]) or ("Remote" if remote else "")
             out.append({
                 "id": f"js:{j.get('job_id')}",
                 "title": j.get("job_title", ""),
@@ -173,12 +199,12 @@ def fetch_jsearch():
                 "created": j.get("job_posted_at_datetime_utc", ""),
                 "redirect_url": j.get("job_apply_link", ""),
                 "description": j.get("job_description", "") or "",
-                "job_is_remote": bool(j.get("job_is_remote")),
+                "job_is_remote": remote,
                 "employment_type": (j.get("job_employment_type") or "").upper(),
                 "pay_period": (j.get("job_salary_period") or "").upper(),
                 "source": "JSearch",
             })
-        log(f"JSearch ({provider}) '{title}': {len(data.get('data', []))} results")
+        log(f"JSearch ({provider}) '{title}': {len(jobs_list)} results")
     return out
 
 
