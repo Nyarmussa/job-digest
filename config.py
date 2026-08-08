@@ -27,18 +27,18 @@ Server/Online, Tableau Server Client), Alteryx, KNIME, Power BI, Looker, NetSuit
 Strengths: gold-standard data models, high-adoption dashboards, executive revenue/plan/labor
 reporting for President & COO, reporting automation, early AI work (Databricks Genie semantic
 layer + agents).
-HONEST GAPS (do NOT count as strengths; downweight roles that hard-require them): Snowflake,
+HONEST GAPS (do NOT count as strengths): Snowflake,
 BigQuery, dbt, Airflow, and heavy A/B testing / experimentation / statistics. Databricks is his
 only cloud warehouse."""
 
 # --- Filters (SALARY_MIN / MAX_DAYS_OLD can be overridden via secrets) --------
 SALARY_MIN = int(os.environ.get("SALARY_MIN", "110000"))   # base salary floor (USD)
 MAX_DAYS_OLD = int(os.environ.get("MAX_DAYS_OLD", "21"))   # only postings this fresh
-MIN_EMPLOYEES = 200                                         # "no startups" threshold (est.)
-MIN_SCORE = 3.5                                             # only surface roles >= this fit score (1-5)
+MIN_EMPLOYEES = 150                                         # "no startups" threshold (est.)
+MIN_SCORE = 3                                             # only surface roles >= this fit score (1-5)
 
 # --- Volume / cost knobs -----------------------------------------------------
-JSEARCH_PAGES = 3        # results per title = pages x 10 (each page = 1 API credit)
+JSEARCH_PAGES = 10        # results per title = pages x 10 (each page = 1 API credit)
 MAX_TO_SCORE = int(os.environ.get("MAX_TO_SCORE", "40"))   # max candidates sent to Claude per run
 EMAIL_MAX = 7            # roles in the weekly best-of email
 DASH_MAX = 40            # roles shown on the dashboard
