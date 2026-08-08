@@ -32,42 +32,16 @@ import requests
 import anthropic
 
 # ---------------------------------------------------------------------------
-# Profile & rules
+# Settings live in config.py — edit that file to tune titles, filters, and caps.
 # ---------------------------------------------------------------------------
-TARGET_TITLES = [
-    "senior data analyst",
-    "senior business analyst",
-    "business intelligence analyst",
-]
+from config import (
+    TARGET_TITLES, PROFILE, SALARY_MIN, MAX_DAYS_OLD, MAX_TO_SCORE, MIN_SCORE,
+    EMAIL_MAX, DASH_MAX, MIN_EMPLOYEES, CLAUDE_MODEL, JSEARCH_PAGES,
+    ADZUNA_COUNTRY, ADZUNA_PAGES, REMOTE_HINTS, MONTANA_HINTS, SALARIED_TEMP_BLOCK,
+)
 
-PROFILE = """Ryan Assum, based in Bozeman MT, works fully remote. ~11 years finance + analytics.
-Current: Business Analyst III, Parks & Resorts at Delaware North (remote). BS Finance.
-Core stack: Databricks (SQL - CTEs, window functions; Python/PySpark), Tableau (Desktop,
-Server/Online, Tableau Server Client), Alteryx, KNIME, Power BI, Looker, NetSuite, Excel/VBA.
-Strengths: gold-standard data models, high-adoption dashboards, executive revenue/plan/labor
-reporting for President & COO, reporting automation, early AI work (Databricks Genie semantic
-layer + agents).
-HONEST GAPS (do NOT count as strengths; downweight roles that hard-require them): Snowflake,
-BigQuery, dbt, Airflow, and heavy A/B testing / experimentation / statistics. Databricks is his
-only cloud warehouse."""
-
-SALARY_MIN = int(os.environ.get("SALARY_MIN", "110000"))
-MAX_DAYS_OLD = int(os.environ.get("MAX_DAYS_OLD", "14"))
-MAX_TO_SCORE = int(os.environ.get("MAX_TO_SCORE", "25"))
-MIN_SCORE = 3.5
-EMAIL_MAX = 7        # weekly best-of
-DASH_MAX = 20        # daily dashboard (all clearing the bar, capped)
-MIN_EMPLOYEES = 200
-CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
+# Runtime secret (set as a GitHub Actions secret), not a user-tunable setting:
 FEEDBACK_URL = os.environ.get("FEEDBACK_URL", "").strip()
-
-ADZUNA_COUNTRY = "us"
-ADZUNA_PAGES = 2
-JSEARCH_PAGES = 1
-REMOTE_HINTS = ("remote", "work from home", "wfh", "anywhere", "distributed")
-MONTANA_HINTS = ("montana", ", mt", " mt ", "bozeman", "missoula", "billings", "helena")
-SALARIED_TEMP_BLOCK = ("CONTRACTOR", "CONTRACT", "PART_TIME", "PARTTIME",
-                       "INTERN", "TEMPORARY", "TEMP")
 
 
 def log(msg):
