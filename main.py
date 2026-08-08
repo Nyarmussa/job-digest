@@ -293,7 +293,7 @@ def prefilter(jobs):
         if ((smin is None) or (smin >= SALARY_MIN)) and looks_remote_or_mt(job):
             kept.append(job)
     log(f"Pre-filter kept {len(kept)} of {len(jobs)}")
-    kept.sort(key=lambda j: j.get("created", ""), reverse=True)
+    kept.sort(key=lambda j: j.get("created") or "", reverse=True)
     return kept[:MAX_TO_SCORE]
 
 
