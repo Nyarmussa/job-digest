@@ -1,0 +1,36 @@
+name: Weekly Job Digest
+ 
+on:
+  schedule:
+    # 07:00 America/Denver (Mountain). GitHub cron is UTC, so 13:00 UTC (MST/UTC-7).
+    # During Mountain Daylight Time this arrives at 06:00 local — close enough for a weekly digest.
+    - cron: "0 13 * * 1"
+  workflow_dispatch:   # lets you run it manually from the Actions tab any time
+ 
+jobs:
+  run-digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+ 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+ 
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+ 
+      - name: Run digest
+        env:
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GMAIL_ADDRESS: ${{ secrets.GMAIL_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          FEEDBACK_URL: ${{ secrets.FEEDBACK_URL }}
+        run: python main.py email
+        
