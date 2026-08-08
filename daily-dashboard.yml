@@ -1,0 +1,46 @@
+
+Daily dashboard · YML
+name: Daily Job Dashboard
+ 
+on:
+  schedule:
+    # 12:00 UTC daily (~06:00 Mountain). Builds docs/ and publishes to GitHub Pages.
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+ 
+permissions:
+  contents: write   # needed to commit the refreshed docs/ back to the repo
+ 
+jobs:
+  build-dashboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+ 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+ 
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+ 
+      - name: Build dashboard
+        env:
+          RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FEEDBACK_URL: ${{ secrets.FEEDBACK_URL }}
+        run: python main.py dashboard
+ 
+      - name: Commit updated dashboard
+        run: |
+          git config user.name  "job-digest-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/
+          git commit -m "Daily dashboard refresh $(date -u +%Y-%m-%d)" || echo "No changes"
+          git push
+ 
