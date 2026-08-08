@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Job-match engine. Two modes:
+Job-match engine for Ryan Assum. Two modes:
 
   python main.py email      -> weekly best-of, emailed via Gmail (Mondays)
   python main.py dashboard  -> daily list, written to docs/ for GitHub Pages
@@ -128,24 +128,37 @@ def _annualize(amount, period):
         return None
 
 
-def fetch_jsearch(rapidapi_key):
+def fetch_jsearch():
+    """Supports JSearch via OpenWeb Ninja's own API (OPENWEBNINJA_API_KEY) or the
+    RapidAPI-hosted gateway (RAPIDAPI_KEY). Whichever key is set is used."""
+    own = os.environ.get("OPENWEBNINJA_API_KEY", "").strip()
+    rapid = os.environ.get("RAPIDAPI_KEY", "").strip()
+    if own:
+        url = "https://api.openwebninja.com/jsearch/search"
+        headers = {"x-api-key": own}
+        provider = "OpenWebNinja"
+    elif rapid:
+        url = "https://jsearch.p.rapidapi.com/search"
+        headers = {"X-RapidAPI-Key": rapid, "X-RapidAPI-Host": "jsearch.p.rapidapi.com"}
+        provider = "RapidAPI"
+    else:
+        return []
     out = []
-    headers = {"X-RapidAPI-Key": rapidapi_key, "X-RapidAPI-Host": "jsearch.p.rapidapi.com"}
     for title in TARGET_TITLES:
         params = {
-            "query": f"{title} in United States",
+            "query": title,
+            "country": "us",
             "page": "1",
             "num_pages": str(JSEARCH_PAGES),
             "date_posted": "month",
             "employment_types": "FULLTIME",
         }
         try:
-            r = requests.get("https://jsearch.p.rapidapi.com/search",
-                             headers=headers, params=params, timeout=30)
+            r = requests.get(url, headers=headers, params=params, timeout=30)
             r.raise_for_status()
             data = r.json()
         except Exception as e:
-            log(f"JSearch fetch failed for '{title}': {e}")
+            log(f"JSearch ({provider}) fetch failed for '{title}': {e}")
             continue
         for j in data.get("data", []):
             loc_bits = [j.get("job_city"), j.get("job_state"), j.get("job_country")]
@@ -165,7 +178,7 @@ def fetch_jsearch(rapidapi_key):
                 "pay_period": (j.get("job_salary_period") or "").upper(),
                 "source": "JSearch",
             })
-        log(f"JSearch '{title}': {len(data.get('data', []))} results")
+        log(f"JSearch ({provider}) '{title}': {len(data.get('data', []))} results")
     return out
 
 
@@ -486,12 +499,12 @@ render();
 
 # ---------------------------------------------------------------------------
 def gather_and_score(cap):
-    have_js = bool(os.environ.get("RAPIDAPI_KEY"))
+    have_js = bool(os.environ.get("OPENWEBNINJA_API_KEY") or os.environ.get("RAPIDAPI_KEY"))
     have_az = bool(os.environ.get("ADZUNA_APP_ID") and os.environ.get("ADZUNA_APP_KEY"))
     if not (have_js or have_az):
-        log("ERROR: no job source. Set RAPIDAPI_KEY and/or ADZUNA_APP_ID + ADZUNA_APP_KEY.")
+        log("ERROR: no job source. Set OPENWEBNINJA_API_KEY (or RAPIDAPI_KEY) and/or ADZUNA_APP_ID + ADZUNA_APP_KEY.")
         sys.exit(1)
-    js = fetch_jsearch(os.environ["RAPIDAPI_KEY"]) if have_js else []
+    js = fetch_jsearch() if have_js else []
     az = fetch_adzuna(os.environ["ADZUNA_APP_ID"], os.environ["ADZUNA_APP_KEY"]) if have_az else []
     jobs = merge_dedupe(js, az)
     candidates = prefilter(jobs)
