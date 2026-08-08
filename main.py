@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Job-match engine for Ryan Assum. Two modes:
+Job-match engine. Two modes:
 
   python main.py email      -> weekly best-of, emailed via Gmail (Mondays)
   python main.py dashboard  -> daily list, written to docs/ for GitHub Pages
@@ -171,33 +171,43 @@ def fetch_jsearch(rapidapi_key):
 
 def fetch_adzuna(app_id, app_key):
     seen = {}
+    # Adzuna has no "remote" flag, so ask for it explicitly: one pass requiring the
+    # word "remote" alongside the title, one pass scoped to Montana. This surfaces roles
+    # that will actually survive the remote/MT filter instead of onsite ones we'd discard.
+    passes = [{"label": "remote", "what": "remote"},
+              {"label": "MT", "where": "Montana"}]
     for title in TARGET_TITLES:
-        for page in range(1, ADZUNA_PAGES + 1):
-            url = f"https://api.adzuna.com/v1/api/jobs/{ADZUNA_COUNTRY}/search/{page}"
-            params = {
-                "app_id": app_id, "app_key": app_key, "what_phrase": title,
-                "results_per_page": 50, "max_days_old": MAX_DAYS_OLD,
-                "salary_min": SALARY_MIN, "full_time": 1, "permanent": 1,
-                "content-type": "application/json",
-            }
-            try:
-                r = requests.get(url, params=params, timeout=30)
-                r.raise_for_status()
-                data = r.json()
-            except Exception as e:
-                log(f"Adzuna fetch failed for '{title}' p{page}: {e}")
-                continue
-            for job in data.get("results", []):
-                jid = f"az:{job.get('id')}"
-                if jid not in seen:
-                    job["id"] = jid
-                    job["source"] = "Adzuna"
-                    job["job_is_remote"] = None
-                    job["employment_type"] = ("FULLTIME" if job.get("contract_time") == "full_time"
-                                              else (job.get("contract_time") or "").upper())
-                    job["pay_period"] = "YEAR"
-                    seen[jid] = job
-            log(f"Adzuna '{title}' p{page}: {len(data.get('results', []))} results")
+        for p in passes:
+            for page in range(1, ADZUNA_PAGES + 1):
+                url = f"https://api.adzuna.com/v1/api/jobs/{ADZUNA_COUNTRY}/search/{page}"
+                params = {
+                    "app_id": app_id, "app_key": app_key, "what_phrase": title,
+                    "results_per_page": 50, "max_days_old": MAX_DAYS_OLD,
+                    "salary_min": SALARY_MIN, "full_time": 1, "permanent": 1,
+                    "content-type": "application/json",
+                }
+                if "what" in p:
+                    params["what"] = p["what"]
+                if "where" in p:
+                    params["where"] = p["where"]
+                try:
+                    r = requests.get(url, params=params, timeout=30)
+                    r.raise_for_status()
+                    data = r.json()
+                except Exception as e:
+                    log(f"Adzuna fetch failed for '{title}' [{p['label']}] p{page}: {e}")
+                    continue
+                for job in data.get("results", []):
+                    jid = f"az:{job.get('id')}"
+                    if jid not in seen:
+                        job["id"] = jid
+                        job["source"] = "Adzuna"
+                        job["job_is_remote"] = None
+                        job["employment_type"] = ("FULLTIME" if job.get("contract_time") == "full_time"
+                                                  else (job.get("contract_time") or "").upper())
+                        job["pay_period"] = "YEAR"
+                        seen[jid] = job
+                log(f"Adzuna '{title}' [{p['label']}] p{page}: {len(data.get('results', []))} results")
     return list(seen.values())
 
 
