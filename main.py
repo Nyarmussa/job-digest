@@ -155,14 +155,15 @@ def fetch_jsearch():
                 "work_from_home": "true",   # remote roles; Montana comes from Adzuna
                 "num_pages": str(JSEARCH_PAGES),
             }
-        else:  # RapidAPI JSearch
+        else:  # RapidAPI JSearch (v5, GET /search)
             params = {
-                "query": f"{title} remote",
+                "query": title,
                 "country": "us",
                 "page": "1",
                 "num_pages": str(JSEARCH_PAGES),
                 "date_posted": "month",
                 "employment_types": "FULLTIME",
+                "remote_jobs_only": "true",   # RapidAPI's dedicated remote filter
             }
         data = None
         for attempt in (1, 2, 3):
