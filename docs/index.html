@@ -17,11 +17,11 @@
   .foot{color:#888;font-size:12px;margin-top:22px;border-top:1px solid #eee;padding-top:12px}
 </style></head><body>
 <h1>Daily job matches</h1>
-<div class="sub">Updated 2026-08-31 18:18 UTC • best first • 👍/👎 teaches the ranking what you like</div>
+<div class="sub">Updated 2026-09-02 15:27 UTC • best first • 👍/👎 teaches the ranking what you like</div>
 <div id="list"></div>
 <div class="foot">Screened on: Full-time salaried only (no hourly/contract/temp) • salary ≥ $110,000 (or undisclosed, flagged) • ~150+ employees (estimate) • remote or Montana • posted within 21 days • fit ≥ 3/5.0. Size / AI / growth are best-effort estimates — verify before applying.</div>
 <script>
-const JOBS = [{"title": "Master Data Analyst - Remote", "company": "OLDCASTLE INFRASTRUCTURE, INC.", "location": "Lenox Square Finance, Fulton County", "salary_min": 183125.25, "salary_max": 183125.25, "created": "2026-08-26", "url": "https://www.adzuna.com/details/5857341848?utm_medium=api&utm_source=51fcb035", "source": "Adzuna", "score": 3.5, "size_estimate": "Very Large (CRH ~15,000+ employees)", "ai_posture": "Not mentioned in excerpt", "growth_signal": "Global infrastructure leader; stable growth", "why": "Master Data Analyst title fits seniority. Finance/infrastructure domain adjacent. Salary strong ($183K). Limited posting detail; no tech stack visibility.", "caveat": "Tech stack requirements unclear; title generic", "salary_disclosed": true}];
+const JOBS = [{"title": "Master Data Analyst - Remote", "company": "OLDCASTLE INFRASTRUCTURE, INC.", "location": "Lenox Square Finance, Fulton County", "salary_min": 183125.25, "salary_max": 183125.25, "created": "2026-08-26", "url": "https://www.adzuna.com/details/5857341848?utm_medium=api&utm_source=51fcb035", "source": "Adzuna", "score": 3.8, "size_estimate": "Large (CRH/Oldcastle; 1000+ employees)", "ai_posture": "Not mentioned; infrastructure focus", "growth_signal": "Market leader; reinventing solutions", "why": "Master Data Analyst matches SQL/Python/analytics. Strong salary. Exec reporting potential.", "caveat": "Tech stack not specified; no AI signals", "salary_disclosed": true}];
 const FEEDBACK_URL = "https://script.google.com/macros/s/AKfycbx5b7Ddc3rfI_qW7g2Axo3GeC-iEofBg8GaQ3lQM1PBSA-pgkJcXtL-K_Ngm70_C5O6/exec";
 const voted = JSON.parse(localStorage.getItem('voted')||'{}');
 function money(v){return (typeof v==='number'&&v)?'$'+v.toLocaleString():null;}

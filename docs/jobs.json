@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-31 18:18 UTC",
+  "updated": "2026-09-02 15:27 UTC",
   "jobs": [
     {
       "title": "Master Data Analyst - Remote",
@@ -10,12 +10,12 @@
       "created": "2026-08-26",
       "url": "https://www.adzuna.com/details/5857341848?utm_medium=api&utm_source=51fcb035",
       "source": "Adzuna",
-      "score": 3.5,
-      "size_estimate": "Very Large (CRH ~15,000+ employees)",
-      "ai_posture": "Not mentioned in excerpt",
-      "growth_signal": "Global infrastructure leader; stable growth",
-      "why": "Master Data Analyst title fits seniority. Finance/infrastructure domain adjacent. Salary strong ($183K). Limited posting detail; no tech stack visibility.",
-      "caveat": "Tech stack requirements unclear; title generic",
+      "score": 3.8,
+      "size_estimate": "Large (CRH/Oldcastle; 1000+ employees)",
+      "ai_posture": "Not mentioned; infrastructure focus",
+      "growth_signal": "Market leader; reinventing solutions",
+      "why": "Master Data Analyst matches SQL/Python/analytics. Strong salary. Exec reporting potential.",
+      "caveat": "Tech stack not specified; no AI signals",
       "salary_disclosed": true
     }
   ]
