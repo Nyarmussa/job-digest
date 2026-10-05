@@ -17,11 +17,11 @@
   .foot{color:#888;font-size:12px;margin-top:22px;border-top:1px solid #eee;padding-top:12px}
 </style></head><body>
 <h1>Daily job matches</h1>
-<div class="sub">Updated 2026-10-02 16:56 UTC • best first • 👍/👎 teaches the ranking what you like</div>
+<div class="sub">Updated 2026-10-05 19:50 UTC • best first • 👍/👎 teaches the ranking what you like</div>
 <div id="list"></div>
 <div class="foot">Screened on: Full-time salaried only (no hourly/contract/temp) • salary ≥ $110,000 (or undisclosed, flagged) • ~150+ employees (estimate) • remote or Montana • posted within 21 days • fit ≥ 3/5.0. Size / AI / growth are best-effort estimates — verify before applying.</div>
 <script>
-const JOBS = [{"title": "Capital Planning & Investment Analyst (Business Strategy & Financial Modeling) (Remote)", "company": "Alignment Healthcare USA, LLC", "location": "Santa Ana, Orange County", "salary_min": 194305.14, "salary_max": 194305.14, "created": "2026-09-24", "url": "https://www.adzuna.com/details/5897443127?utm_medium=api&utm_source=51fcb035", "source": "Adzuna", "score": 3.8, "size_estimate": "1000-2000", "ai_posture": "Strategy-focused", "growth_signal": "Fast-growing healthcare company", "why": "Financial modeling + capital planning aligns with finance background. Executive-level work.", "caveat": "Healthcare domain; modeling over analytics stack", "salary_disclosed": true}, {"title": "Master Data Analyst - Remote", "company": "OLDCASTLE INFRASTRUCTURE, INC.", "location": "Lenox Square Finance, Fulton County", "salary_min": 183125.25, "salary_max": 183125.25, "created": "2026-09-26", "url": "https://www.adzuna.com/details/5900028250?utm_medium=api&utm_source=51fcb035", "source": "Adzuna", "score": 3.2, "size_estimate": "5000+", "ai_posture": "None mentioned", "growth_signal": "Large stable infrastructure company", "why": "Data analyst title fits but no tech stack detail. Manufacturing/infrastructure focus.", "caveat": "Vague JD; missing tech requirements", "salary_disclosed": true}];
+const JOBS = [];
 const FEEDBACK_URL = "https://script.google.com/macros/s/AKfycbx5b7Ddc3rfI_qW7g2Axo3GeC-iEofBg8GaQ3lQM1PBSA-pgkJcXtL-K_Ngm70_C5O6/exec";
 const voted = JSON.parse(localStorage.getItem('voted')||'{}');
 function money(v){return (typeof v==='number'&&v)?'$'+v.toLocaleString():null;}
