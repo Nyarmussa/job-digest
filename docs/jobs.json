@@ -1,4 +1,22 @@
 {
-  "updated": "2026-10-05 19:50 UTC",
-  "jobs": []
+  "updated": "2026-10-07 18:02 UTC",
+  "jobs": [
+    {
+      "title": "Senior Business Analyst",
+      "company": "Sprezzatura Management Consulting",
+      "location": "US",
+      "salary_min": 112000,
+      "salary_max": 130000,
+      "created": "2026-09-30",
+      "url": "https://www.adzuna.com/details/5903622503?utm_medium=api&utm_source=51fcb035",
+      "source": "Adzuna",
+      "score": 3.2,
+      "size_estimate": "Small-Medium consulting (~50-150)",
+      "ai_posture": "None evident",
+      "growth_signal": "Federal modernization work ongoing",
+      "why": "BA role with requirements analysis; remote; salary acceptable; not analytics-heavy",
+      "caveat": "VA work (slow); requirements-focused, not BI/reporting/dashboards",
+      "salary_disclosed": true
+    }
+  ]
 }
